@@ -13,7 +13,7 @@ class StatsConsumer
     
     static void updateSummary(const float& pConfidence);
 
-    static void updatePeakScore(const float& pConfidence);
+    static bool updatePeakScore(const float& pConfidence);
 
 public:
 
