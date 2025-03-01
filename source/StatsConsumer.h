@@ -3,19 +3,34 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <atomic>
 
 class StatsConsumer
 {
-    static std::size_t m_tickCounter;
-    static std::vector<float> m_peakSamples;
-    
-    static bool startTimer();
-    
-    static void updateSummary(const float& pConfidence);
+    float m_peakConfidence;
+    std::size_t m_tickCounter;
+    std::vector<float> m_peakSamples;
+    std::vector<std::pair<std::string, float>> m_stats;
 
-    static bool updatePeakScore(const float& pConfidence);
+    void updateStats();
+    void updatePulse();
+
+    bool startStatsTimer();
+    void startPulseTimer();
+
+    StatsConsumer();
+    ~StatsConsumer();
 
 public:
 
-    static void update(std::vector<std::pair<std::string, float>>& pConfidence);
+    StatsConsumer(StatsConsumer&) = delete;
+    StatsConsumer(StatsConsumer&&) = delete;
+    void operator=(StatsConsumer&) = delete;
+
+    static StatsConsumer& instance() {
+        static StatsConsumer instance;
+        return instance;
+    }
+
+    std::vector<std::pair<std::string, float>>& getContainer();
 };

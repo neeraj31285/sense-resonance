@@ -10,8 +10,7 @@
 int main() 
 {
     std::vector<float> sample;
-    std::vector<std::pair<std::string, float>> aiResult;
-   
+
     sample.reserve(adac::SAMPLE_SIZE);
     if(!adac::AudioStreamer::instance().startStream()) {
         std::cout << "failed to start stream.." << std::endl;
@@ -23,8 +22,8 @@ int main()
         if(adac::AudioStreamer::instance().captureSample(sample))
         {
             adac::AudioDspUtils::scaleFloatToPCM(sample);
+            auto& aiResult = StatsConsumer::instance().getContainer();
             ai::Classifier::runInference(sample, aiResult);
-            StatsConsumer::update(aiResult);
         }
         sample.clear();
     }

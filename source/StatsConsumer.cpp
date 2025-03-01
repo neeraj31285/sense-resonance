@@ -1,107 +1,182 @@
 #include "StatsConsumer.h"
+#include "AiConfig.h"
 
+#include <mutex>
 #include <thread>
 #include <chrono>
+#include <numeric>
 #include <iomanip>
 #include <iostream>
-#include <numeric>
 
-constexpr short SAMPLE_COUNT = 3;
+constexpr short SAMPLE_COUNT = 5;
+constexpr char* RED = "\033[1;31m";
+constexpr char* CYAN = "\033[1;96m";
+constexpr char* TEAL = "\033[38;2;0;128;128m";
+constexpr char* RED_BG = "\033[1;41m";
+constexpr char* GREEN = "\033[1;32m";
+constexpr char* YELLOW = "\033[1;33m";
+constexpr char* MAGENTA = "\033[1;35m";
+constexpr char* BRIGHT_RED = "\033[38;2;204;0;0m";
+constexpr char* RESET = "\033[0m";
+constexpr char* MOVE_UP = "\033[A";
+constexpr char* CLEAR_LINE = "\033[2K";
 
-std::size_t StatsConsumer::m_tickCounter = 0;
-std::vector<float> StatsConsumer::m_peakSamples(SAMPLE_COUNT, 0.0);
+std::mutex g_consoleMutex;
 
-bool StatsConsumer::startTimer() 
+StatsConsumer::StatsConsumer()
+: m_peakConfidence(0.0f)
+, m_tickCounter(0)
+, m_peakSamples(SAMPLE_COUNT, 0.0)
 {
-    std::thread([]() 
+    startPulseTimer();
+}
+
+
+StatsConsumer::~StatsConsumer()
+{
+    
+}
+
+
+std::vector<std::pair<std::string, float>>& StatsConsumer::getContainer()
+{
+    return m_stats;
+}
+
+
+bool StatsConsumer::startStatsTimer()
+{
+    std::thread([this]()
     {
-        while (true) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            m_tickCounter++;
+        int counter = 0;
+        while (true) 
+        {
+            if (m_stats[0].second > m_peakConfidence) {
+                m_peakConfidence = m_stats[0].second;
+            } 
+            //critical section
+            {
+                std::lock_guard<std::mutex> lock(g_consoleMutex);
+                updateStats();
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }).detach();
     return true;
 }
 
 
-void StatsConsumer::updateSummary(const float& pConfidence)
+void StatsConsumer::startPulseTimer()
+{
+    std::thread([this]()
+    {
+        while (true)
+        {
+            std::cout << std::flush;
+            if(m_stats.size() <= 1) {
+                continue;
+            } 
+            //critical section
+            {
+                std::lock_guard<std::mutex> lock(g_consoleMutex);                
+                std::cout   << "\n" << CLEAR_LINE <<" " 
+                            << m_stats[ai::INDEX_0].first <<" (" << std::fixed << std::setprecision(5) 
+                            << m_stats[ai::INDEX_0].second << ")\t" 
+                            << m_stats[ai::INDEX_1].first <<" (" 
+                            << m_stats[ai::INDEX_1].second << ")\t"
+                            << "anomaly " << "(" << m_peakConfidence << ")"
+                            << "\n-----------------------------------------------------------------          \n";
+
+                updatePulse();
+                std::cout << MOVE_UP << MOVE_UP << std::flush;
+                static bool _= startStatsTimer();
+                m_peakConfidence = 0.0;
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+    }).detach();
+}
+
+
+void StatsConsumer::updatePulse()
 {
     static std::size_t counter = 0;
     const short& lastIndex = (counter++ % SAMPLE_COUNT);
-    m_peakSamples[lastIndex] = pConfidence;
+    m_peakSamples[lastIndex] = m_peakConfidence;
     const float& anomalyScore = std::accumulate(m_peakSamples.begin(), m_peakSamples.end(), 0.0f) / SAMPLE_COUNT;
 
-    if(anomalyScore > 0.9f && anomalyScore < 0.997f) {
-        std::cout <<" \033[1;96mAnomaly State:\033[0m \033[1;32mThreshold exceeded. (Low-risk)\033[0m";     // Green (Safe)
-    }
-    else if(anomalyScore >= 0.997f && anomalyScore < 0.999f) {
-        std::cout <<" \033[1;96mAnomaly State:\033[0m \033[1;33mDetecting resonance. (High-risk)\033[0m";   // Red (Danger)
-    }
-    else if(anomalyScore >= 0.999f) {
-        std::cout <<" \033[1;96mAnomaly State:\033[0m \033[1;35mSevere vibrations. \033[1;31m(CRITICAL)\033[0m \t\033[1;41m[ALERT: Glasses rattling!!]\033[0m"; // Red Background (Critical)
-    }
-    else {
-        std::cout <<" \033[1;96mAnomaly State:\033[0m Stable (No-Risk)";
-    }
-}
-
-
-bool StatsConsumer::updatePeakScore(const float& pConfidence)
-{
-    if(pConfidence > 0.85f && pConfidence < 0.92f) {
-        std::cout << "\033[1;32m(" << pConfidence << ")\t[Level 0] Resonating.\033[0m";    // Green (Safe)
-    }
-    else if(pConfidence > 0.92f && pConfidence < 0.96f) {
-        std::cout << "\033[1;33m(" << pConfidence << ")\t[Level 1] Subtle burst.\033[0m";    // Yellow (Warning)
-    }
-    else if(pConfidence >= 0.96f && pConfidence < 0.99f) {
-        std::cout << "\033[1;35m(" << pConfidence << ")\t[Level 2] Mild burst.\033[0m";    // Magenta (Caution)
-    }
-    else if(pConfidence >= 0.99f && pConfidence < 0.9999f) {
-        std::cout << "\033[1;31m(" << pConfidence << ")\t[Level 3] Audible burst.\033[0m";    // Red (Danger)
-    }
-    else if(pConfidence >= 0.9999f) {
-        std::cout << "\033[1;41m(" << pConfidence << ")\t[Level 4] Rattling.\033[0m"; // Red Background (Critical)
-    }
-    else {
-        std::cout << "(" << pConfidence << ")" << std::flush;
-	    return false;
-    }
-    return true;
-}
-
-
-void StatsConsumer::update(std::vector<std::pair<std::string, float>>& pConfidence) 
-{
-    static bool _= startTimer();
-    static bool isColored = false;
-    static float peakConfidence = 0.0f;
-    static int lastTick = m_tickCounter;
-    
-    if (pConfidence[0].second > peakConfidence) {
-        peakConfidence = pConfidence[0].second;
-    }
-
-    std::cout   << "\r"; // Move cursor a line up and to start of line.
-    std::cout   << " " <<pConfidence[0].first <<" (" << std::fixed << std::setprecision(5) << pConfidence[0].second << ")\t"
-                << pConfidence[1].first <<" (" << pConfidence[1].second << ")\t"
-                << "anomaly ";
-    
-    if(lastTick != m_tickCounter) 
+    if(anomalyScore > 0.9f && anomalyScore < 0.997f) 
     {
-          std::cout   << "\n\33[2K\r" << std::flush;
-          std::cout   << " " << pConfidence[0].first <<" (" << std::fixed << std::setprecision(5) << pConfidence[0].second << ")\t"
-                      << pConfidence[1].first <<" (" << pConfidence[1].second << ")\t"
-                      << "anomaly ";
+        std::cout   << " " << CYAN 
+                    << "Anomaly State:" << RESET 
+                    << " " << GREEN 
+                    << "Threshold exceeded. (Caution)" << RESET;
+    }
+    else if(anomalyScore >= 0.997f && anomalyScore < 0.999f) 
+    {
+        std::cout   << " " << CYAN 
+                    << "Anomaly State:" << RESET 
+                    <<" " << YELLOW 
+                    << "Detecting resonance. (Critical)" << RESET;
+    }
+    else if(anomalyScore >= 0.999f) 
+    {
+        std::cout   <<" " << CYAN 
+                    << "Anomaly State:" << RESET 
+                    << " " << BRIGHT_RED 
+                    << "Severe vibrations. (Fatal)" << RESET 
+                    <<" \t" << RED_BG 
+                    << "[ALERT: Glasses rattling!!]" << RESET;
+    }
+    else 
+    {
+        std::cout   << " " << TEAL 
+                    << "Anomaly State:" << CYAN 
+                    << " Stable (No-Risk)" << RESET;
+    }
+}
 
-        isColored = updatePeakScore(peakConfidence);
-        std::cout << "\n-----------------------------------------------------------------          " << std::endl;
-        updateSummary(peakConfidence);
-        std::cout << "\033[A\033[A";
-        lastTick = m_tickCounter;
-        peakConfidence = 0.0;
+
+void StatsConsumer::updateStats()
+{
+    std::cout   << "\r" << "\033[11C"
+                << std::fixed << std::setprecision(5) 
+                << m_stats[ai::INDEX_0].second << "\033[16C"
+                << m_stats[ai::INDEX_1].second << "\033[15C";
+    
+    if(m_peakConfidence > 0.85f && m_peakConfidence < 0.92f) 
+    {
+        std::cout   << GREEN 
+                    << "(" << m_peakConfidence
+                    << ")\t(L1) Resonating   " << RESET;
     }
-    else if (!isColored) {
-        std::cout << "(" << peakConfidence << ")" << std::flush;
+    else if(m_peakConfidence > 0.92f && m_peakConfidence < 0.96f) 
+    {
+        std::cout   << YELLOW 
+                    << "(" << m_peakConfidence
+                    << ")\t(L2) Subtle-Burst " << RESET;
     }
+    else if(m_peakConfidence >= 0.96f && m_peakConfidence < 0.99f) 
+    {
+        std::cout   << MAGENTA 
+                    << "(" << m_peakConfidence 
+                    << ")\t(L3) Mild-Burst   " << RESET;
+    }
+    else if(m_peakConfidence >= 0.99f && m_peakConfidence < 0.9999f) 
+    {
+        std::cout   << RED
+                    << "(" << m_peakConfidence
+                    << ")\t(L4) Audible-Burst" << RESET;
+    }
+    else if(m_peakConfidence >= 0.9999f) 
+    {
+        std::cout   << BRIGHT_RED
+                    << "(" << m_peakConfidence
+                    << ")\t(L5) Rattling" << RESET
+                    << "     ";
+    }
+    else {
+        std::cout << "(" << m_peakConfidence    << ") ";
+    }
+    std::cout << std::flush;
 }
