@@ -1,6 +1,7 @@
 #include "StatsConsumer.h"
 #include "AiConfig.h"
 
+#include <cmath>
 #include <mutex>
 #include <thread>
 #include <chrono>
@@ -8,20 +9,43 @@
 #include <iomanip>
 #include <iostream>
 
-constexpr short SAMPLE_COUNT = 5;
-constexpr char* RED = "\033[1;31m";
+constexpr short SAMPLE_COUNT = 50;
+
+constexpr char* RED = "\033[38;2;204;0;0m";
 constexpr char* CYAN = "\033[1;96m";
 constexpr char* TEAL = "\033[38;2;0;128;128m";
 constexpr char* RED_BG = "\033[1;41m";
-constexpr char* GREEN = "\033[1;32m";
-constexpr char* YELLOW = "\033[1;33m";
-constexpr char* MAGENTA = "\033[1;35m";
-constexpr char* BRIGHT_RED = "\033[38;2;204;0;0m";
+constexpr char* GREEN = "\033[0;32m";
+constexpr char* GREEN_BOLD = "\033[1;32m";
+constexpr char* YELLOW = "\033[38;2;255;255;153m";
+constexpr char* YELLOW_BOLD = "\033[1;33m";
+constexpr char* BLUE = "\033[38;2;0;191;255m";
+constexpr char* BRIGHT_RED = "\033[1;31m";
 constexpr char* RESET = "\033[0m";
 constexpr char* MOVE_UP = "\033[A";
 constexpr char* CLEAR_LINE = "\033[2K";
 
 std::mutex g_consoleMutex;
+
+namespace {
+
+	float computeRMS(const std::vector<float>& samples)
+	{
+    	if (samples.empty()) {
+			return 0.0f;
+		}
+
+		float sumOfSquares = 0.0f;
+        
+		for (float sample : samples) {
+			sumOfSquares += sample * sample;
+		}
+
+    	float meanOfSquares = sumOfSquares / samples.size();
+    	return std::sqrt(meanOfSquares); // sqrt works with float too
+	}
+}
+
 
 StatsConsumer::StatsConsumer()
 : m_peakConfidence(0.0f)
@@ -34,7 +58,7 @@ StatsConsumer::StatsConsumer()
 
 StatsConsumer::~StatsConsumer()
 {
-    
+
 }
 
 
@@ -48,12 +72,15 @@ bool StatsConsumer::startStatsTimer()
 {
     std::thread([this]()
     {
-        int counter = 0;
-        while (true) 
+        unsigned short counter = 0;
+        while (true)
         {
             if (m_stats[0].second > m_peakConfidence) {
                 m_peakConfidence = m_stats[0].second;
-            } 
+            }
+            const auto& index = (counter++ % SAMPLE_COUNT);
+            m_peakSamples[index] = m_peakConfidence;
+
             //critical section
             {
                 std::lock_guard<std::mutex> lock(g_consoleMutex);
@@ -75,18 +102,18 @@ void StatsConsumer::startPulseTimer()
             std::cout << std::flush;
             if(m_stats.size() <= 1) {
                 continue;
-            } 
+            }
+
             //critical section
             {
-                std::lock_guard<std::mutex> lock(g_consoleMutex);                
-                std::cout   << "\n" << CLEAR_LINE <<" " 
-                            << m_stats[ai::INDEX_0].first <<" (" << std::fixed << std::setprecision(5) 
-                            << m_stats[ai::INDEX_0].second << ")\t" 
-                            << m_stats[ai::INDEX_1].first <<" (" 
+                std::lock_guard<std::mutex> lock(g_consoleMutex);
+                std::cout   << "\n" << CLEAR_LINE <<" "
+                            << m_stats[ai::INDEX_0].first <<" (" << std::fixed << std::setprecision(5)
+                            << m_stats[ai::INDEX_0].second << ")\t"
+                            << m_stats[ai::INDEX_1].first <<" ("
                             << m_stats[ai::INDEX_1].second << ")\t"
                             << "anomaly " << "(" << m_peakConfidence << ")"
                             << "\n-----------------------------------------------------------------          \n";
-
                 updatePulse();
                 std::cout << MOVE_UP << MOVE_UP << std::flush;
                 static bool _= startStatsTimer();
@@ -100,38 +127,35 @@ void StatsConsumer::startPulseTimer()
 
 void StatsConsumer::updatePulse()
 {
-    static std::size_t counter = 0;
-    const short& lastIndex = (counter++ % SAMPLE_COUNT);
-    m_peakSamples[lastIndex] = m_peakConfidence;
-    const float& anomalyScore = std::accumulate(m_peakSamples.begin(), m_peakSamples.end(), 0.0f) / SAMPLE_COUNT;
+    const float& anomalyScore = computeRMS(m_peakSamples);
 
-    if(anomalyScore > 0.9f && anomalyScore < 0.997f) 
+    if(anomalyScore > 0.85f && anomalyScore < 0.97f)
     {
-        std::cout   << " " << CYAN 
-                    << "Anomaly State:" << RESET 
-                    << " " << GREEN 
+        std::cout   << " " << CYAN
+                    << "Anomaly State:" << RESET
+                    << " " << GREEN_BOLD
                     << "Threshold exceeded. (Caution)" << RESET;
     }
-    else if(anomalyScore >= 0.997f && anomalyScore < 0.999f) 
+    else if(anomalyScore >= 0.97f && anomalyScore < 0.9999f)
     {
-        std::cout   << " " << CYAN 
-                    << "Anomaly State:" << RESET 
-                    <<" " << YELLOW 
+        std::cout   << " " << CYAN
+                    << "Anomaly State:" << RESET
+                    <<" " << YELLOW_BOLD
                     << "Detecting resonance. (Critical)" << RESET;
     }
-    else if(anomalyScore >= 0.999f) 
+    else if(anomalyScore >= 0.9999f)
     {
-        std::cout   <<" " << CYAN 
-                    << "Anomaly State:" << RESET 
-                    << " " << BRIGHT_RED 
-                    << "Severe vibrations. (Fatal)" << RESET 
-                    <<" \t" << RED_BG 
+        std::cout   <<" " << CYAN
+                    << "Anomaly State:" << RESET
+                    << " " << BRIGHT_RED
+                    << "Severe vibrations. (Fatal)" << RESET
+                    <<" \t" << RED_BG
                     << "[ALERT: Glasses rattling!!]" << RESET;
     }
-    else 
+    else
     {
-        std::cout   << " " << TEAL 
-                    << "Anomaly State:" << CYAN 
+        std::cout   << " " << TEAL
+                    << "Anomaly State:" << CYAN
                     << " Stable (No-Risk)" << RESET;
     }
 }
@@ -140,35 +164,35 @@ void StatsConsumer::updatePulse()
 void StatsConsumer::updateStats()
 {
     std::cout   << "\r" << "\033[11C"
-                << std::fixed << std::setprecision(5) 
+                << std::fixed << std::setprecision(5)
                 << m_stats[ai::INDEX_0].second << "\033[16C"
                 << m_stats[ai::INDEX_1].second << "\033[15C";
-    
-    if(m_peakConfidence > 0.85f && m_peakConfidence < 0.92f) 
+
+    if(m_peakConfidence > 0.85f && m_peakConfidence < 0.92f)
     {
-        std::cout   << GREEN 
+        std::cout   << GREEN
                     << "(" << m_peakConfidence
                     << ")\t(L1) Resonating   " << RESET;
     }
-    else if(m_peakConfidence > 0.92f && m_peakConfidence < 0.96f) 
+    else if(m_peakConfidence > 0.92f && m_peakConfidence < 0.96f)
     {
-        std::cout   << YELLOW 
+        std::cout   << YELLOW
                     << "(" << m_peakConfidence
                     << ")\t(L2) Subtle-Burst " << RESET;
     }
-    else if(m_peakConfidence >= 0.96f && m_peakConfidence < 0.99f) 
+    else if(m_peakConfidence >= 0.96f && m_peakConfidence < 0.99f)
     {
-        std::cout   << MAGENTA 
-                    << "(" << m_peakConfidence 
+        std::cout   << BLUE
+                    << "(" << m_peakConfidence
                     << ")\t(L3) Mild-Burst   " << RESET;
     }
-    else if(m_peakConfidence >= 0.99f && m_peakConfidence < 0.9999f) 
+    else if(m_peakConfidence >= 0.99f && m_peakConfidence < 0.9999f)
     {
         std::cout   << RED
                     << "(" << m_peakConfidence
                     << ")\t(L4) Audible-Burst" << RESET;
     }
-    else if(m_peakConfidence >= 0.9999f) 
+    else if(m_peakConfidence >= 0.9999f)
     {
         std::cout   << BRIGHT_RED
                     << "(" << m_peakConfidence

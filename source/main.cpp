@@ -8,22 +8,22 @@
 #include "StatsConsumer.h"
 
 int main() 
-{
-    std::vector<float> sample;
-
-    sample.reserve(adac::SAMPLE_SIZE);
+{    
     if(!adac::AudioStreamer::instance().startStream()) {
         std::cout << "failed to start stream.." << std::endl;
         return -1;
     }
+ 
+    std::vector<float> sample;
+    sample.reserve(adac::SAMPLE_SIZE);
     
     while (true)
     {
         if(adac::AudioStreamer::instance().captureSample(sample))
         {
             adac::AudioDspUtils::scaleFloatToPCM(sample);
-            auto& aiResult = StatsConsumer::instance().getContainer();
-            ai::Classifier::runInference(sample, aiResult);
+            auto& resultContainer = StatsConsumer::instance().getContainer();
+            ai::Classifier::runInference(sample, resultContainer);
         }
         sample.clear();
     }
