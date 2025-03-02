@@ -9,11 +9,11 @@
 #include <iomanip>
 #include <iostream>
 
-constexpr short SAMPLE_COUNT = 50;
+constexpr short SAMPLE_COUNT = 30;
 
 constexpr char* RED = "\033[38;2;204;0;0m";
 constexpr char* CYAN = "\033[1;96m";
-constexpr char* TEAL = "\033[38;2;0;128;128m";
+constexpr char* TEAL = "\033[1;38;2;0;128;128m";
 constexpr char* RED_BG = "\033[1;41m";
 constexpr char* GREEN = "\033[0;32m";
 constexpr char* GREEN_BOLD = "\033[1;32m";
@@ -115,9 +115,9 @@ void StatsConsumer::startPulseTimer()
                             << "anomaly " << "(" << m_peakConfidence << ")"
                             << "\n-----------------------------------------------------------------          \n";
                 updatePulse();
-                std::cout << MOVE_UP << MOVE_UP << std::flush;
-                static bool _= startStatsTimer();
+                std::cout   << MOVE_UP << MOVE_UP << std::flush;
                 m_peakConfidence = 0.0;
+                static bool _= startStatsTimer();
             }
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
@@ -170,33 +170,33 @@ void StatsConsumer::updateStats()
 
     if(m_peakConfidence > 0.85f && m_peakConfidence < 0.92f)
     {
-        std::cout   << GREEN
+        std::cout   << BLUE
                     << "(" << m_peakConfidence
-                    << ")\t(L1) Resonating   " << RESET;
+                    << ")\t(L0) Resonating   " << RESET;
     }
     else if(m_peakConfidence > 0.92f && m_peakConfidence < 0.96f)
     {
-        std::cout   << YELLOW
+        std::cout   << GREEN
                     << "(" << m_peakConfidence
-                    << ")\t(L2) Subtle-Burst " << RESET;
+                    << ")\t(L1) Subtle-Burst " << RESET;
     }
     else if(m_peakConfidence >= 0.96f && m_peakConfidence < 0.99f)
     {
-        std::cout   << BLUE
+        std::cout   << YELLOW
                     << "(" << m_peakConfidence
-                    << ")\t(L3) Mild-Burst   " << RESET;
+                    << ")\t(L2) Mild-Burst   " << RESET;
     }
     else if(m_peakConfidence >= 0.99f && m_peakConfidence < 0.9999f)
     {
         std::cout   << RED
                     << "(" << m_peakConfidence
-                    << ")\t(L4) Audible-Burst" << RESET;
+                    << ")\t(L3) Audible-Burst" << RESET;
     }
     else if(m_peakConfidence >= 0.9999f)
     {
         std::cout   << BRIGHT_RED
                     << "(" << m_peakConfidence
-                    << ")\t(L5) Rattling" << RESET
+                    << ")\t(L4) Rattling" << RESET
                     << "     ";
     }
     else {
