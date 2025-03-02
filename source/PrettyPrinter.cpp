@@ -116,21 +116,21 @@ namespace console
     {
         const float& anomalyScore = computeRMS(m_peakSamples);
     
-        if(anomalyScore > 0.85f && anomalyScore < 0.97f)
+        if ANOMALY_ZONE_GREEN(anomalyScore)
         {
             std::cout   << " " << CYAN
                         << "Anomaly State:" << RESET
                         << " " << GREEN_BOLD
                         << "Threshold exceeded. (Caution)" << RESET;
         }
-        else if(anomalyScore >= 0.97f && anomalyScore < 0.9999f)
+        else if ANOMALY_ZONE_YELLOW(anomalyScore)
         {
             std::cout   << " " << CYAN
                         << "Anomaly State:" << RESET
                         <<" " << YELLOW_BOLD
                         << "Detecting resonance. (Critical)" << RESET;
         }
-        else if(anomalyScore >= 0.9999f)
+        else if ANOMALY_ZONE_DANGER(anomalyScore)
         {
             std::cout   <<" " << CYAN
                         << "Anomaly State:" << RESET
@@ -155,31 +155,31 @@ namespace console
                     << m_stats[ai::INDEX_0].second << "\033[16C"
                     << m_stats[ai::INDEX_1].second << "\033[15C";
     
-        if(m_peakConfidence > 0.85f && m_peakConfidence < 0.92f)
+        if PEAK_ZONE_BLUE(m_peakConfidence)
         {
             std::cout   << BLUE
                         << "(" << m_peakConfidence
                         << ")\t(L0) Resonating   " << RESET;
         }
-        else if(m_peakConfidence > 0.92f && m_peakConfidence < 0.96f)
+        else if PEAK_ZONE_GREEN(m_peakConfidence)
         {
             std::cout   << GREEN
                         << "(" << m_peakConfidence
                         << ")\t(L1) Subtle-Burst " << RESET;
         }
-        else if(m_peakConfidence >= 0.96f && m_peakConfidence < 0.99f)
+        else if PEAK_ZONE_YELLOW(m_peakConfidence)
         {
             std::cout   << YELLOW
                         << "(" << m_peakConfidence
                         << ")\t(L2) Mild-Burst   " << RESET;
         }
-        else if(m_peakConfidence >= 0.99f && m_peakConfidence < 0.9999f)
+        else if PEAK_ZONE_RED(m_peakConfidence)
         {
             std::cout   << RED
                         << "(" << m_peakConfidence
                         << ")\t(L3) Audible-Burst" << RESET;
         }
-        else if(m_peakConfidence >= 0.9999f)
+        else if PEAK_ZONE_DANGER(m_peakConfidence)
         {
             std::cout   << BRIGHT_RED
                         << "(" << m_peakConfidence
