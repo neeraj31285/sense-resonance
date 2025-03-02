@@ -1,0 +1,194 @@
+
+#include "PrettyPrinter.h"
+#include "AiConfig.h"
+#include "PrintConstants.h"
+
+#include <cmath>
+#include <mutex>
+#include <thread>
+#include <chrono>
+#include <numeric>
+#include <iomanip>
+#include <iostream>
+
+namespace {
+
+	float computeRMS(const std::vector<float>& samples)
+	{
+    	if (samples.empty()) {
+			return 0.0f;
+		}
+
+		float sumOfSquares = 0.0f;
+        
+		for (float sample : samples) {
+			sumOfSquares += sample * sample;
+		}
+
+    	float meanOfSquares = sumOfSquares / samples.size();
+    	return std::sqrt(meanOfSquares); // sqrt works with float too
+	}
+}
+
+namespace console 
+{
+    std::mutex g_consoleMutex;
+    
+    PrettyPrinter::PrettyPrinter()
+    : m_peakConfidence(0.0f)
+    , m_tickCounter(0)
+    , m_peakSamples(SAMPLE_COUNT, 0.0)
+    {
+        startPulseTimer();
+    }
+    
+    
+    PrettyPrinter::~PrettyPrinter()
+    {
+    
+    }
+    
+    
+    std::vector<std::pair<std::string, float>>& PrettyPrinter::getOutBuffer()
+    {
+        return m_stats;
+    }
+    
+    
+    bool PrettyPrinter::startStatsTimer()
+    {
+        std::thread([this]()
+        {
+            unsigned short counter = 0;
+            while (true)
+            {
+                if (m_stats[0].second > m_peakConfidence) {
+                    m_peakConfidence = m_stats[0].second;
+                }
+                const auto& index = (counter++ % SAMPLE_COUNT);
+                m_peakSamples[index] = m_peakConfidence;
+    
+                //critical section
+                {
+                    std::lock_guard<std::mutex> lock(g_consoleMutex);
+                    updateStats();
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+        }).detach();
+        return true;
+    }
+    
+    
+    void PrettyPrinter::startPulseTimer()
+    {
+        std::thread([this]()
+        {
+            while (true)
+            {
+                std::cout << std::flush;
+                if(m_stats.size() <= 1) {
+                    continue;
+                }
+    
+                //critical section
+                {
+                    std::lock_guard<std::mutex> lock(g_consoleMutex);
+                    std::cout   << "\n" << CLEAR_LINE <<" "
+                                << m_stats[ai::INDEX_0].first <<" (" << std::fixed << std::setprecision(5)
+                                << m_stats[ai::INDEX_0].second << ")\t"
+                                << m_stats[ai::INDEX_1].first <<" ("
+                                << m_stats[ai::INDEX_1].second << ")\t"
+                                << "anomaly " << "(" << m_peakConfidence << ")"
+                                << "\n-----------------------------------------------------------------          \n";
+                    updatePulse();
+                    std::cout   << MOVE_UP << MOVE_UP << std::flush;
+                    m_peakConfidence = 0.0;
+                    static bool _= startStatsTimer();
+                }
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+        }).detach();
+    }
+    
+    
+    void PrettyPrinter::updatePulse()
+    {
+        const float& anomalyScore = computeRMS(m_peakSamples);
+    
+        if(anomalyScore > 0.85f && anomalyScore < 0.97f)
+        {
+            std::cout   << " " << CYAN
+                        << "Anomaly State:" << RESET
+                        << " " << GREEN_BOLD
+                        << "Threshold exceeded. (Caution)" << RESET;
+        }
+        else if(anomalyScore >= 0.97f && anomalyScore < 0.9999f)
+        {
+            std::cout   << " " << CYAN
+                        << "Anomaly State:" << RESET
+                        <<" " << YELLOW_BOLD
+                        << "Detecting resonance. (Critical)" << RESET;
+        }
+        else if(anomalyScore >= 0.9999f)
+        {
+            std::cout   <<" " << CYAN
+                        << "Anomaly State:" << RESET
+                        << " " << BRIGHT_RED
+                        << "Severe vibrations. (Fatal)" << RESET
+                        <<" \t" << RED_BG
+                        << "[ALERT: Glasses rattling!!]" << RESET;
+        }
+        else
+        {
+            std::cout   << " " << TEAL
+                        << "Anomaly State:" << CYAN
+                        << " Stable (No-Risk)" << RESET;
+        }
+    }
+    
+    
+    void PrettyPrinter::updateStats()
+    {
+        std::cout   << "\r" << "\033[11C"
+                    << std::fixed << std::setprecision(5)
+                    << m_stats[ai::INDEX_0].second << "\033[16C"
+                    << m_stats[ai::INDEX_1].second << "\033[15C";
+    
+        if(m_peakConfidence > 0.85f && m_peakConfidence < 0.92f)
+        {
+            std::cout   << BLUE
+                        << "(" << m_peakConfidence
+                        << ")\t(L0) Resonating   " << RESET;
+        }
+        else if(m_peakConfidence > 0.92f && m_peakConfidence < 0.96f)
+        {
+            std::cout   << GREEN
+                        << "(" << m_peakConfidence
+                        << ")\t(L1) Subtle-Burst " << RESET;
+        }
+        else if(m_peakConfidence >= 0.96f && m_peakConfidence < 0.99f)
+        {
+            std::cout   << YELLOW
+                        << "(" << m_peakConfidence
+                        << ")\t(L2) Mild-Burst   " << RESET;
+        }
+        else if(m_peakConfidence >= 0.99f && m_peakConfidence < 0.9999f)
+        {
+            std::cout   << RED
+                        << "(" << m_peakConfidence
+                        << ")\t(L3) Audible-Burst" << RESET;
+        }
+        else if(m_peakConfidence >= 0.9999f)
+        {
+            std::cout   << BRIGHT_RED
+                        << "(" << m_peakConfidence
+                        << ")\t(L4) Rattling" << RESET
+                        << "     ";
+        }
+        else {
+            std::cout << "(" << m_peakConfidence    << ") ";
+        }
+        std::cout << std::flush;
+    }
+}

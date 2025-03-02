@@ -1,11 +1,8 @@
-#include <portaudio.h>
-#include <iostream>
-#include <vector>
 
 #include "Classifier.h"
 #include "AudioStreamer.h"
 #include "AudioDspUtils.h"
-#include "StatsConsumer.h"
+#include "PrettyPrinter.h"
 
 int main() 
 {    
@@ -22,8 +19,8 @@ int main()
         if(adac::AudioStreamer::instance().captureSample(sample))
         {
             adac::AudioDspUtils::scaleFloatToPCM(sample);
-            auto& resultContainer = StatsConsumer::instance().getContainer();
-            ai::Classifier::runInference(sample, resultContainer);
+            auto& resultBuffer = console::PrettyPrinter::instance().getOutBuffer();
+            ai::Classifier::runInference(sample, resultBuffer);
         }
         sample.clear();
     }
