@@ -11,7 +11,7 @@ CXXSOURCES = source/main.cpp \
              source/AudioStreamer.cpp \
 			 source/AudioDspUtils.cpp \
 			 source/Classifier.cpp \
-			 source/StatsConsumer.cpp
+			 source/PrettyPrinter.cpp
 
 # Search path for header files (current directory)
 CFLAGS += -I.
