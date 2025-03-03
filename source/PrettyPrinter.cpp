@@ -100,7 +100,7 @@ namespace console
                                 << m_statsBuffer[ai::INDEX_0].second << ")\t"
                                 << m_statsBuffer[ai::INDEX_1].first <<" ("
                                 << m_statsBuffer[ai::INDEX_1].second << ")\t"
-                                << "anomaly " << "(" << m_peakConfidence << ")"
+                                << ANOMALY_STR << " (" << m_peakConfidence << ")"
                                 << "\n-----------------------------------------------------------------          \n";
                     updatePulse();
                     std::cout   << MOVE_UP << MOVE_UP << std::flush;
@@ -120,31 +120,31 @@ namespace console
         if ANOMALY_ZONE_GREEN(anomalyScore)
         {
             std::cout   << " " << CYAN
-                        << "Anomaly State:" << RESET
+                        << ANOMALY_STATE << RESET
                         << " " << GREEN_BOLD
-                        << "Threshold exceeded. (Caution)" << RESET;
+                        << ANOMLY_GREEN_STR << RESET;
         }
         else if ANOMALY_ZONE_YELLOW(anomalyScore)
         {
             std::cout   << " " << CYAN
-                        << "Anomaly State:" << RESET
+                        << ANOMALY_STATE << RESET
                         <<" " << YELLOW_BOLD
-                        << "Detecting resonance. (Critical)" << RESET;
+                        << ANOMLY_YELLOW_STR << RESET;
         }
         else if ANOMALY_ZONE_DANGER(anomalyScore)
         {
             std::cout   <<" " << CYAN
-                        << "Anomaly State:" << RESET
+                        << ANOMALY_STATE << RESET
                         << " " << BRIGHT_RED
-                        << "Severe vibrations. (Fatal)" << RESET
+                        <<  ANOMLY_DANGER_STR << RESET
                         <<" \t" << RED_BG
-                        << "[ALERT: Glasses rattling!!]" << RESET;
+                        << ANOMALY_ALERT_STR << RESET;
         }
         else
         {
             std::cout   << " " << TEAL
-                        << "Anomaly State:" << CYAN
-                        << " Stable (No-Risk)" << RESET;
+                        << ANOMALY_STATE << CYAN
+                        << " " << ANOMLY_SAFE_STR << RESET;
         }
     }
     
@@ -160,32 +160,32 @@ namespace console
         {
             std::cout   << BLUE
                         << "(" << m_peakConfidence
-                        << ")\t(L0) Resonating   " << RESET;
+                        << ")\t" << BLUE_ZSTR << RESET;
         }
         else if PEAK_ZONE_GREEN(m_peakConfidence)
         {
             std::cout   << GREEN
                         << "(" << m_peakConfidence
-                        << ")\t(L1) Subtle-Burst " << RESET;
+                        << ")\t" << GREEN_ZSTR << RESET;
         }
         else if PEAK_ZONE_YELLOW(m_peakConfidence)
         {
             std::cout   << YELLOW
                         << "(" << m_peakConfidence
-                        << ")\t(L2) Mild-Burst   " << RESET;
+                        << ")\t" << YELLOW_ZSTR << RESET;
         }
         else if PEAK_ZONE_RED(m_peakConfidence)
         {
             std::cout   << RED
                         << "(" << m_peakConfidence
-                        << ")\t(L3) Audible-Burst" << RESET;
+                        << ")\t" << RED_ZSTR << RESET;
         }
         else if PEAK_ZONE_DANGER(m_peakConfidence)
         {
             std::cout   << BRIGHT_RED
                         << "(" << m_peakConfidence
-                        << ")\t(L4) Rattling" << RESET
-                        << "     ";
+                        << ")\t" << DANGER_ZSTR << RESET
+                        << "\t";
         }
         else {
             std::cout << "(" << m_peakConfidence    << ") ";
