@@ -47,27 +47,27 @@ namespace console
     {
     
     }
-    
-    
-    std::vector<std::pair<std::string, float>>& PrettyPrinter::getStatsBuffer()
-    {
+
+    std::vector<std::pair<std::string, float>> &PrettyPrinter::getStatsBuffer() {
         return m_statsBuffer;
     }
-    
+
+    void PrettyPrinter::update()
+    {
+        static unsigned short counter = 0;
+        if (m_statsBuffer[0].second > m_peakConfidence) {
+            m_peakConfidence = m_statsBuffer[0].second;
+        }
+        const auto& index = (counter++ % SAMPLE_COUNT);
+        m_peakSamples[index] = m_peakConfidence;
+    }
+
     
     bool PrettyPrinter::startStatsTimer()
     {
         std::thread([this]()
         {
-            unsigned short counter = 0;
-            while (true)
-            {
-                if (m_statsBuffer[0].second > m_peakConfidence) {
-                    m_peakConfidence = m_statsBuffer[0].second;
-                }
-                const auto& index = (counter++ % SAMPLE_COUNT);
-                m_peakSamples[index] = m_peakConfidence;
-    
+            while (true) {    
                 //critical section
                 {
                     std::lock_guard<std::mutex> lock(g_consoleMutex);
@@ -84,26 +84,15 @@ namespace console
     {
         std::thread([this]()
         {
-            while (true)
-            {
+            while (true) {
                 if(m_statsBuffer.size() < ai::LABEL_COUNT) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     continue;
                 }
-
-                std::cout << std::flush;
                 //critical section
                 {
                     std::lock_guard<std::mutex> lock(g_consoleMutex);
-                    std::cout   << "\n" << CLEAR_LINE <<" "
-                                << m_statsBuffer[ai::INDEX_0].first <<" (" << std::fixed << std::setprecision(5)
-                                << m_statsBuffer[ai::INDEX_0].second << ")\t"
-                                << m_statsBuffer[ai::INDEX_1].first <<" ("
-                                << m_statsBuffer[ai::INDEX_1].second << ")\t"
-                                << ANOMALY_STR << " (" << m_peakConfidence << ")"
-                                << "\n-----------------------------------------------------------------          \n";
                     updatePulse();
-                    std::cout   << MOVE_UP << MOVE_UP << std::flush;
                     m_peakConfidence = 0.0;
                     static bool _= startStatsTimer();
                 }
@@ -115,8 +104,15 @@ namespace console
     
     void PrettyPrinter::updatePulse()
     {
+        std::cout   << "\n" << CLEAR_LINE <<" "
+                    << m_statsBuffer[ai::INDEX_0].first <<" (" << std::fixed << std::setprecision(5)
+                    << m_statsBuffer[ai::INDEX_0].second << ")\t"
+                    << m_statsBuffer[ai::INDEX_1].first <<" ("
+                    << m_statsBuffer[ai::INDEX_1].second << ")\t"
+                    << ANOMALY_STR << " (" << m_peakConfidence << ")"
+                    << "\n-----------------------------------------------------------------          \n";
+
         const float& anomalyScore = computeRMS(m_peakSamples);
-    
         if ANOMALY_ZONE_GREEN(anomalyScore)
         {
             std::cout   << " " << CYAN
@@ -146,6 +142,7 @@ namespace console
                         << ANOMALY_STATE << CYAN
                         << " " << ANOMLY_SAFE_STR << RESET;
         }
+        std::cout   << MOVE_UP << MOVE_UP << std::flush;
     }
     
     

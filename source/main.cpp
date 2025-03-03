@@ -24,6 +24,7 @@ int main()
 
             adac::AudioDspUtils::scaleFloatToPCM(sample);
             ai::Classifier::runInference(sample, resultBuffer);
+            console::PrettyPrinter::instance().update();
         }
         sample.clear();
     }

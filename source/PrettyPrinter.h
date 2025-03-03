@@ -32,6 +32,8 @@ namespace console
             return instance;
         }
         
+        void update();
+        
         std::vector<std::pair<std::string, float>>& getStatsBuffer();
     };
 }
