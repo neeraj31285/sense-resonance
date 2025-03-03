@@ -2,8 +2,6 @@
 
 #include <vector>
 #include <string>
-#include <iostream>
-#include <atomic>
 
 namespace console 
 {
@@ -12,7 +10,7 @@ namespace console
         float m_peakConfidence;
         std::size_t m_tickCounter;
         std::vector<float> m_peakSamples;
-        std::vector<std::pair<std::string, float>> m_stats;
+        std::vector<std::pair<std::string, float>> m_statsBuffer;
     
         void updateStats();
         void updatePulse();
@@ -34,6 +32,6 @@ namespace console
             return instance;
         }
         
-        std::vector<std::pair<std::string, float>>& getOutBuffer();
+        std::vector<std::pair<std::string, float>>& getStatsBuffer();
     };
 }

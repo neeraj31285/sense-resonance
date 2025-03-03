@@ -49,9 +49,9 @@ namespace console
     }
     
     
-    std::vector<std::pair<std::string, float>>& PrettyPrinter::getOutBuffer()
+    std::vector<std::pair<std::string, float>>& PrettyPrinter::getStatsBuffer()
     {
-        return m_stats;
+        return m_statsBuffer;
     }
     
     
@@ -62,8 +62,8 @@ namespace console
             unsigned short counter = 0;
             while (true)
             {
-                if (m_stats[0].second > m_peakConfidence) {
-                    m_peakConfidence = m_stats[0].second;
+                if (m_statsBuffer[0].second > m_peakConfidence) {
+                    m_peakConfidence = m_statsBuffer[0].second;
                 }
                 const auto& index = (counter++ % SAMPLE_COUNT);
                 m_peakSamples[index] = m_peakConfidence;
@@ -86,19 +86,20 @@ namespace console
         {
             while (true)
             {
-                std::cout << std::flush;
-                if(m_stats.size() <= 1) {
+                if(m_statsBuffer.size() < ai::LABEL_COUNT) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     continue;
                 }
-    
+
+                std::cout << std::flush;
                 //critical section
                 {
                     std::lock_guard<std::mutex> lock(g_consoleMutex);
                     std::cout   << "\n" << CLEAR_LINE <<" "
-                                << m_stats[ai::INDEX_0].first <<" (" << std::fixed << std::setprecision(5)
-                                << m_stats[ai::INDEX_0].second << ")\t"
-                                << m_stats[ai::INDEX_1].first <<" ("
-                                << m_stats[ai::INDEX_1].second << ")\t"
+                                << m_statsBuffer[ai::INDEX_0].first <<" (" << std::fixed << std::setprecision(5)
+                                << m_statsBuffer[ai::INDEX_0].second << ")\t"
+                                << m_statsBuffer[ai::INDEX_1].first <<" ("
+                                << m_statsBuffer[ai::INDEX_1].second << ")\t"
                                 << "anomaly " << "(" << m_peakConfidence << ")"
                                 << "\n-----------------------------------------------------------------          \n";
                     updatePulse();
@@ -152,8 +153,8 @@ namespace console
     {
         std::cout   << "\r" << "\033[11C"
                     << std::fixed << std::setprecision(5)
-                    << m_stats[ai::INDEX_0].second << "\033[16C"
-                    << m_stats[ai::INDEX_1].second << "\033[15C";
+                    << m_statsBuffer[ai::INDEX_0].second << "\033[16C"
+                    << m_statsBuffer[ai::INDEX_1].second << "\033[15C";
     
         if PEAK_ZONE_BLUE(m_peakConfidence)
         {

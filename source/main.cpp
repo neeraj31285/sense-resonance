@@ -13,13 +13,14 @@ int main()
  
     std::vector<float> sample;
     sample.reserve(adac::SAMPLE_SIZE);
-    
+
+    auto& resultBuffer = console::PrettyPrinter::instance().getStatsBuffer();
+
     while (true)
     {
-        if(adac::AudioStreamer::instance().captureSample(sample))
-        {
+        if(adac::AudioStreamer::instance().captureSample(sample)) {
+
             adac::AudioDspUtils::scaleFloatToPCM(sample);
-            auto& resultBuffer = console::PrettyPrinter::instance().getOutBuffer();
             ai::Classifier::runInference(sample, resultBuffer);
         }
         sample.clear();
