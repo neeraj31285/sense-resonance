@@ -54,12 +54,9 @@ namespace console
 
     void PrettyPrinter::update()
     {
-        static unsigned short counter = 0;
         if (m_statsBuffer[0].second > m_peakConfidence) {
             m_peakConfidence = m_statsBuffer[0].second;
         }
-        const auto& index = (counter++ % SAMPLE_COUNT);
-        m_peakSamples[index] = m_peakConfidence;
     }
 
     
@@ -73,6 +70,9 @@ namespace console
                     std::lock_guard<std::mutex> lock(g_consoleMutex);
                     updateStats();
                 }
+                static unsigned short counter = 0;
+                const auto& index = (counter++ % SAMPLE_COUNT);
+                m_peakSamples[index] = m_peakConfidence;        
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
         }).detach();
