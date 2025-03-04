@@ -181,8 +181,7 @@ namespace console
         {
             std::cout   << BRIGHT_RED
                         << "(" << m_peakConfidence
-                        << ")\t" << DANGER_ZSTR << RESET
-                        << "\t";
+                        << ")\t" << DANGER_ZSTR << RESET;
         }
         else {
             std::cout << "(" << m_peakConfidence    << ") ";

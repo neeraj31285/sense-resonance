@@ -22,7 +22,7 @@ namespace console
     constexpr const char* GREEN_ZSTR =  "(L1) Subtle-Burst ";
     constexpr const char* YELLOW_ZSTR = "(L2) Mild-Burst   ";
     constexpr const char* RED_ZSTR =    "(L3) Audible-Burst";
-    constexpr const char* DANGER_ZSTR = "(L4) Rattling";
+    constexpr const char* DANGER_ZSTR = "(L4) Rattling     ";
 
     constexpr const char* ANOMALY_STR =         "anomaly";
     constexpr const char* ANOMALY_STATE =       "Anomaly State:";
