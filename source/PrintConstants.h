@@ -36,9 +36,9 @@ namespace console
     #define ANOMALY_ZONE_YELLOW(_anomalyScore) (_anomalyScore >= 0.97f && _anomalyScore < 0.9999f)
     #define ANOMALY_ZONE_DANGER(_anomalyScore) (_anomalyScore >= 0.9999f)
 
-    #define PEAK_ZONE_BLUE(_peakConfidence) (_peakConfidence > 0.85f && _peakConfidence < 0.92f)
-    #define PEAK_ZONE_GREEN(_peakConfidence) (_peakConfidence >= 0.92f && _peakConfidence < 0.96f)
-    #define PEAK_ZONE_YELLOW(_peakConfidence) (_peakConfidence >= 0.96f && _peakConfidence < 0.99f)
+    #define PEAK_ZONE_BLUE(_peakConfidence) (_peakConfidence > 0.40f && _peakConfidence < 0.85f)
+    #define PEAK_ZONE_GREEN(_peakConfidence) (_peakConfidence >= 0.80f && _peakConfidence < 0.95f)
+    #define PEAK_ZONE_YELLOW(_peakConfidence) (_peakConfidence >= 0.95f && _peakConfidence < 0.99f)
     #define PEAK_ZONE_RED(_peakConfidence) (_peakConfidence >= 0.99f && _peakConfidence < 0.9999f)
     #define PEAK_ZONE_DANGER(_peakConfidence) (_peakConfidence >= 0.9999f)
 }
