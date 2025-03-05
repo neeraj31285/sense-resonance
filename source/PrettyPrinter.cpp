@@ -7,28 +7,9 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
-#include <numeric>
 #include <iomanip>
 #include <iostream>
 
-namespace {
-
-	float computeRMS(const std::vector<float>& samples)
-	{
-    	if (samples.empty()) {
-			return 0.0f;
-		}
-
-		float sumOfSquares = 0.0f;
-        
-		for (float sample : samples) {
-			sumOfSquares += sample * sample;
-		}
-
-    	float meanOfSquares = sumOfSquares / samples.size();
-    	return std::sqrt(meanOfSquares); // sqrt works with float too
-	}
-}
 
 namespace console 
 {
@@ -48,9 +29,11 @@ namespace console
     
     }
 
+
     std::vector<std::pair<std::string, float>> &PrettyPrinter::getStatsBuffer() {
         return m_statsBuffer;
     }
+
 
     void PrettyPrinter::update()
     {
@@ -59,7 +42,21 @@ namespace console
         }
     }
 
-    
+
+    float PrettyPrinter::computeRMS(const std::vector<float>& pSamples)
+    {
+        if (!pSamples.empty()) 
+        {
+            float sumOfSquares = 0.0f;
+            for (float sample : pSamples) {
+                sumOfSquares += (sample * sample);
+            }
+            return std::sqrt(sumOfSquares / pSamples.size());
+        }
+        return 0.0f;
+    }
+
+
     bool PrettyPrinter::startStatsTimer()
     {
         std::thread([this]()
@@ -184,7 +181,7 @@ namespace console
                         << ")\t" << DANGER_ZSTR << RESET;
         }
         else {
-            std::cout << "(" << m_peakConfidence    << ") ";
+            std::cout << "(" << m_peakConfidence << ") ";
         }
         std::cout << std::flush;
     }

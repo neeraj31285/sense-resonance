@@ -2,7 +2,7 @@
 
 namespace console
 {
-    constexpr short SAMPLE_COUNT = 100;
+    constexpr short SAMPLE_COUNT = 50;
 
     constexpr const char* RED =         "\033[38;2;204;0;0m";
     constexpr const char* CYAN =        "\033[1;96m";

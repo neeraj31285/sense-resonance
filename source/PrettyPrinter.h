@@ -12,15 +12,16 @@ namespace console
         std::vector<float> m_peakSamples;
         std::vector<std::pair<std::string, float>> m_statsBuffer;
     
+        PrettyPrinter();
+        ~PrettyPrinter();
+
         void updateStats();
         void updatePulse();
     
         bool startStatsTimer();
         void startPulseTimer();
-    
-        PrettyPrinter();
-        ~PrettyPrinter();
-    
+        float computeRMS(const std::vector<float>& pSamples);
+
     public:
     
         PrettyPrinter(PrettyPrinter&) = delete;
