@@ -80,10 +80,10 @@ namespace adac
 
 
     int AudioStreamer::audioCallback(const void *pInputBuffer, void *pOutputBuffer,
-                                    unsigned long pFramesPerBuffer,
-                                    const PaStreamCallbackTimeInfo *pTimeInfo,
-                                    PaStreamCallbackFlags pStatusFlags,
-                                    void *pUserBuffer)
+                                     unsigned long pFramesPerBuffer,
+                                     const PaStreamCallbackTimeInfo *pTimeInfo,
+                                     PaStreamCallbackFlags pStatusFlags,
+                                     void *pUserBuffer)
     {
         static unsigned int counter = 0;
         const float *inputBuffer = static_cast<const float*> (pInputBuffer);
