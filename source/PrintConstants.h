@@ -27,12 +27,12 @@ namespace console
     constexpr const char* ANOMALY_STR =         "anomaly";
     constexpr const char* ANOMALY_STATE =       "Anomaly State:";
     constexpr const char* ANOMLY_SAFE_STR =     "Stable (No-Risk)";
-    constexpr const char* ANOMLY_GREEN_STR =    "Threshold exceeded. (Caution)";
-    constexpr const char* ANOMLY_YELLOW_STR =   "Detecting resonance. (Critical)";
+    constexpr const char* ANOMLY_GREEN_STR =    "Detecting resonance. (Caution)";
+    constexpr const char* ANOMLY_YELLOW_STR =   "Threshold exceeded. (Critical)";
     constexpr const char* ANOMLY_DANGER_STR =   "Severe vibrations. (Fatal)";
     constexpr const char* ANOMALY_ALERT_STR =   "[ALERT: Glasses Rattling!!]";
     
-    #define ANOMALY_ZONE_GREEN(_anomalyScore) (_anomalyScore > 0.85f && _anomalyScore < 0.97f)
+    #define ANOMALY_ZONE_GREEN(_anomalyScore) (_anomalyScore > 0.65f && _anomalyScore < 0.97f)
     #define ANOMALY_ZONE_YELLOW(_anomalyScore) (_anomalyScore >= 0.97f && _anomalyScore < 0.9999f)
     #define ANOMALY_ZONE_DANGER(_anomalyScore) (_anomalyScore >= 0.9999f)
 
