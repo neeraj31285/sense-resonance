@@ -135,7 +135,7 @@ const ei_impulse_t impulse_631342_0 = {
     .project_name = "sense-resonance",
     .impulse_id = 1,
     .impulse_name = "Impulse #1",
-    .deploy_version = 5,
+    .deploy_version = 13,
 
     .nn_input_frame_size = 3920,
     .raw_sample_count = 44100,
